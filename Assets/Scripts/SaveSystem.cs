@@ -12,6 +12,7 @@ using UnityEngine.UI;
 
 public class SaveSystem : MonoBehaviour
 {
+    [SerializeField] private GameObject _errorPanel;
     public static List<string> savedFiles = new List<string>();
     private SaveData _saveData;
     
@@ -35,6 +36,11 @@ public class SaveSystem : MonoBehaviour
     
     private void SaveResult()
     {
+        if (_bestPath == null)
+        {
+            _errorPanel.SetActive(true);
+            return;
+        }
          _saveData = new SaveData();
          _saveData.ResultLink = SaveDecisionFile();
         

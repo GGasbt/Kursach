@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6699894579423328323}
   - component: {fileID: 1820628337089275338}
   - component: {fileID: 2176311631499016640}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -113,7 +113,7 @@ GameObject:
   - component: {fileID: 7157499890447674153}
   - component: {fileID: 5684734939321631914}
   - component: {fileID: 3167983669703153832}
-  m_Layer: 5
+  m_Layer: 6
   m_Name: Number
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -249,7 +249,7 @@ GameObject:
   - component: {fileID: 715202749937196310}
   - component: {fileID: 4286526582984510417}
   - component: {fileID: 2058042434923941878}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -10,10 +10,25 @@ using UnityEngine.EventSystems;
 public class CreatePoint : MonoBehaviour
 {
     [SerializeField] GameObject spherePrefab;
+    
     [SerializeField] ParticleSystem _effectPrefab;
+    
+    [SerializeField] Transform _lineObj;
+    [SerializeField] GameObject _linePrefab;
+    
+    [SerializeField] Transform _disatanceValueGameObject;
+    [SerializeField] GameObject _textPrefab;
+    
     private List<Transform> _pointList = new List<Transform>();
 
     private bool _canCreatePoint = true;
+    
+    private bool isDragging = false; // Флаг для отслеживания состояния перетаскивания
+    private Vector3 offset; 
+    
+    
+    public string draggableLayer = "Draggable"; 
+    private Transform selectedObject = null;   
 
     private void Start()
     {
@@ -43,16 +58,91 @@ public class CreatePoint : MonoBehaviour
                 return; // Блокируем выполнение Raycast
             }
             
+            
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
-
-            // Проверяем попадание луча в объект
-            if (Physics.Raycast(ray, out hit) && _canCreatePoint)
+            
+            if (Physics.Raycast(ray, out hit) && _canCreatePoint && hit.transform.gameObject.layer != 6)
             {
+                Debug.Log("fff");
                 // Создаем сферу на месте удара луча
                 SpawnSphere(hit.point);
             }
         }
+
+        if (Input.GetMouseButton(0))
+        {
+            /*
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                return; // Блокируем выполнение Raycast
+            }
+            */
+            if (isDragging)
+            {
+                selectedObject.position = GetMouseWorldPos();
+                for (int i = 0; i < _pointList.Count; i++)
+                {
+                    if (_pointList[i].position != selectedObject.position)
+                    {
+
+                        _lineObj.GetChild(i).GetComponent<LineRenderer>()
+                            .SetPosition(1, selectedObject.position + new Vector3(0, 1, 0));
+                        _disatanceValueGameObject.GetChild(i).transform.position = (selectedObject.position + _pointList[i].position)/2 + new Vector3(0, 2, 0);
+                        _disatanceValueGameObject.GetChild(i).GetComponent<DefinedDistance>()
+                        .DefineValue(Vector3.Distance(selectedObject.position, _pointList[i].position));
+                    }
+                }
+            }
+            else
+            {
+
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                RaycastHit hit;
+
+                // Проверяем попадание луча в объект
+                if (Physics.Raycast(ray, out hit) &&
+                    hit.transform.gameObject.layer == LayerMask.NameToLayer(draggableLayer))
+                {
+                    isDragging = true;
+                    selectedObject = hit.transform;
+                    selectedObject.position = GetMouseWorldPos();
+                    Debug.Log(Time.time);
+                    for (int i = 0; i < _pointList.Count; i++)
+                    {
+                        DrawLine(_pointList[i].position, selectedObject.position);
+                    }
+                }
+            }
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            isDragging = false;
+            for (int i = 0; i < _lineObj.transform.childCount; i++)
+            {
+                Destroy(_lineObj.transform.GetChild(i).gameObject);
+            }
+
+            for (int i = 0; i < _disatanceValueGameObject.childCount; i++)
+            {
+                Destroy(_disatanceValueGameObject.GetChild(i).gameObject);
+            }
+        }
+    }
+    
+    private void DrawLine(Vector3 startPosition, Vector3 endPosition)
+    {
+        GameObject line = Instantiate(_linePrefab, _lineObj);
+        LineRenderer lineRenderer = line.GetComponent<LineRenderer>();
+
+        // Настраиваем точки для линии
+        lineRenderer.positionCount = 2;
+        lineRenderer.SetPosition(0, startPosition + new Vector3(0, 1, 0));
+        lineRenderer.SetPosition(1, endPosition + new Vector3(0, 1, 0));
+        
+        Vector3 center = (endPosition + new Vector3(0, 1, 0) + new Vector3(0, 1, 0) + startPosition) / 2;
+        var v = Instantiate(_textPrefab, center, Quaternion.Euler(0,0,0), _disatanceValueGameObject);
     }
 
     public void GetPointList()
@@ -101,5 +191,12 @@ public class CreatePoint : MonoBehaviour
     {
         yield return new WaitForSeconds(0.5f);
         Destroy(obj);
+    }
+    
+    public Vector3 GetMouseWorldPos()
+    {
+        Vector3 mousePoint = Input.mousePosition;
+        mousePoint.z = Camera.main.WorldToScreenPoint(selectedObject.position).z; // Глубина для корректного преобразования
+        return Camera.main.ScreenToWorldPoint(mousePoint);
     }
 }

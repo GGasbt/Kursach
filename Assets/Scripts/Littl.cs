@@ -28,74 +28,86 @@ public class Littl : MonoBehaviour
         StartAlgoritm += delegate(List<Transform> list) {
             points = list;
             //SaveSystem.saveData.Points = ConvertListInArray(points);
-            StartExecution();
+            SolveTSP();
         };
     }
 
-    private async void StartExecution()
+    public void SolveTSP()
     {
-        numPoints = points.Count;
-        distanceMatrix = new float[numPoints, numPoints];
-        bestPath = new List<int>();
-
-        // Заполнение матрицы расстояний
-        for (int i = 0; i < numPoints; i++)
-        {
-            for (int j = 0; j < numPoints; j++)
-            {
-                if (i != j)
-                {
-                    distanceMatrix[i, j] = Vector3.Distance(points[i].position, points[j].position);
-                }
-                else
-                {
-                    distanceMatrix[i, j] = float.MaxValue; // Исключение путей из точки в саму себя
-                }
-            }
-        }
-
-        await Solve();
+        ComputeDistanceMatrix();
+        bestPath = SolveLittleAlgorithm(distanceMatrix);
         DrawPath();
         FinishAlgoritm?.Invoke(bestPath);
     }
 
-    public Task Solve()
+    void ComputeDistanceMatrix()
     {
-        List<int> initialPath = new List<int> { 0 };
-        BranchAndBound(initialPath, 0);
-        return Task.CompletedTask;
+        int n = points.Count;
+        distanceMatrix = new float[n, n];
+
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (i == j)
+                {
+                    distanceMatrix[i, j] = int.MaxValue; // Исключаем путь из точки в саму себя
+                }
+                else
+                {
+                    distanceMatrix[i, j] = Mathf.RoundToInt(Vector3.Distance(points[i].position, points[j].position));
+                }
+            }
+        }
     }
 
-    private void BranchAndBound(List<int> path, float currentCost)
+    List<int> SolveLittleAlgorithm(float[,] matrix)
     {
-        if (path.Count == numPoints)
+        int n = matrix.GetLength(0);
+        float minCost = int.MaxValue;
+        List<int> bestPath = new List<int>();
+
+        LittleAlgorithm(matrix, new List<int> { 0 }, 0, 0, ref minCost, ref bestPath);
+
+        return bestPath;
+    }
+
+    void LittleAlgorithm(float[,] matrix, List<int> currentPath, float currentCost, int level, ref float minCost, ref List<int> bestPath)
+    {
+        if (level == matrix.GetLength(0) - 1)
         {
-            // Замыкаем цикл (возвращаемся в начальную точку)
-            currentCost += distanceMatrix[path[^1], path[0]];
-            if (currentCost < bestCost)
+            float returnCost = matrix[currentPath[level], 0];
+            float totalCost = currentCost + returnCost;
+
+            if (totalCost < minCost)
             {
-                bestCost = currentCost;
-                bestPath = new List<int>(path);
+                minCost = totalCost;
+                bestPath.Clear();
+                bestPath.AddRange(currentPath);
+                bestPath.Add(0);
             }
             return;
         }
 
-        // Перебор возможных точек
-        for (int i = 0; i < numPoints; i++) 
+        for (int i = 0; i < matrix.GetLength(0); i++)
         {
-            if (!path.Contains(i))
+            if (!currentPath.Contains(i))
             {
-                int last = path[^1];
-                float newCost = currentCost + distanceMatrix[last, i];
-
-                if (newCost < bestCost)
-                {
-                    path.Add(i);
-                    BranchAndBound(path, newCost);
-                    path.RemoveAt(path.Count - 1);
-                }
+                currentPath.Add(i);
+                LittleAlgorithm(matrix, currentPath, currentCost + matrix[currentPath[level], i], level + 1, ref minCost, ref bestPath);
+                currentPath.RemoveAt(currentPath.Count - 1);
             }
         }
+    }
+
+    string FormatPath(List<int> path)
+    {
+        List<string> formatted = new List<string>();
+        foreach (int index in path)
+        {
+            formatted.Add(points[index].name);
+        }
+        return string.Join(" -> ", formatted);
     }
     
     private void DrawPath()
@@ -129,19 +141,5 @@ public class Littl : MonoBehaviour
         lineRenderer.positionCount = 2;
         lineRenderer.SetPosition(0, startPosition + new Vector3(0, 1, 0));
         lineRenderer.SetPosition(1, endPosition + new Vector3(0, 1, 0));
-    }
-    
-    public string PrintBestPath()
-    {
-        string pathStr = "Оптимальный путь: ";
-        foreach (var point in bestPath)
-        {
-            pathStr += point+1 + " ";
-        }
-        Debug.Log(pathStr + $"\nМинимальная стоимость пути: {bestCost:F2}");
-        
-        
-        
-        return pathStr;
     }
 }

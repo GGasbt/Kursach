@@ -8,6 +8,7 @@ public class StartPanelController : MonoBehaviour
 {
     [SerializeField] private GameObject startPanel;
     [SerializeField] private GameObject _infoPanel;
+    [SerializeField] private GameObject _errorPanel;
     
     private void Start()
     {
@@ -47,5 +48,10 @@ public class StartPanelController : MonoBehaviour
     public void CloseInfoPanel()
     {
         _infoPanel.SetActive(false);
+    }
+
+    public void CloseErrorPanel()
+    {
+        _errorPanel.SetActive(false);
     }
 }
