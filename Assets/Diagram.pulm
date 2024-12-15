@@ -1,0 +1,46 @@
+@startuml
+
+class SaveSystem {
+    + SaveResult()
+    + SaveXmlData<T>(T data, string filePath)
+    + SaveXmlData<T>(List<T> list)
+    + SaveTxtResult()
+    + CreateScreenshot()
+    + SaveDecisionFile()
+    +SaveInputData()
+}
+
+class LoadData  {
+    + string SolutionFolderPath
+    + bool StartPanelActive
+    + string CurrentSolutionPath
+    + GetSolutionFolderPat()
+    + LoadSolution()
+    + LoadSolution(stiring path)
+
+}
+
+class Littl {
+    + GameObject _linePrefab;
+    + float[,] distanceMatrix;
+    + int numPoints;
+    + float bestCost = float.MaxValue;
+    + List<int> bestPath;
+
+    +StartExecution()
+    +Solve()
+    +BranchAndBound(List<int> path, float currentCost)
+    +DrawPath()
+    +DrawLine(Vector3 startPosition, Vector3 endPosition)
+}
+
+class SaveData {
+    + InputDataLink
+    + ResultLink
+    + ImageLink
+}
+
+Littl <|-- LoadData
+Littl <|-- SaveSystem
+
+@enduml
