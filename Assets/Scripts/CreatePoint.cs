@@ -11,6 +11,8 @@ public class CreatePoint : MonoBehaviour
 {
     [SerializeField] GameObject spherePrefab;
     
+    [SerializeField] Transform _pathLineObject;
+    
     [SerializeField] ParticleSystem _effectPrefab;
     
     [SerializeField] Transform _lineObj;
@@ -18,6 +20,9 @@ public class CreatePoint : MonoBehaviour
     
     [SerializeField] Transform _disatanceValueGameObject;
     [SerializeField] GameObject _textPrefab;
+    
+    [SerializeField] Transform _fileExceptionPanel;
+    [SerializeField] Transform _warringPanel;
     
     private List<Transform> _pointList = new List<Transform>();
 
@@ -28,8 +33,14 @@ public class CreatePoint : MonoBehaviour
     
     
     public string draggableLayer = "Draggable"; 
-    private Transform selectedObject = null;   
+    private Transform selectedObject = null;
 
+    private void OnEnable()
+    {
+        //Littl.StartAlgoritm += list => _canCreatePoint = false;
+        //Littl.FinishAlgoritm += list => _canCreatePoint = true;
+    }
+    
     private void Start()
     {
         if (LoadData.CurrentSolutionPath == null) return;
@@ -37,6 +48,7 @@ public class CreatePoint : MonoBehaviour
         List<Transform> list = new List<Transform>();
         List<PointData> pointData = GetInputDataWithPath<PointData>(LoadData.CurrentSolutionPath);
         
+        if(pointData != null)
         for (int i = 0; i < pointData.Count; i++)
         {
             for(int j = 0; j < pointData.Count; j++)
@@ -52,12 +64,16 @@ public class CreatePoint : MonoBehaviour
         // Проверяем нажатие левой кнопки мыши
         if (Input.GetMouseButtonDown(0))
         {
-        
             if (EventSystem.current.IsPointerOverGameObject())
             {
                 return; // Блокируем выполнение Raycast
             }
-            
+
+            if (_pathLineObject.childCount != 0)
+            {
+                for(int i = 0; i < _pathLineObject.childCount; i++)
+                    Destroy(_pathLineObject.GetChild(i).gameObject);
+            }
             
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
@@ -72,12 +88,6 @@ public class CreatePoint : MonoBehaviour
 
         if (Input.GetMouseButton(0))
         {
-            /*
-            if (EventSystem.current.IsPointerOverGameObject())
-            {
-                return; // Блокируем выполнение Raycast
-            }
-            */
             if (isDragging)
             {
                 selectedObject.position = GetMouseWorldPos();
@@ -111,6 +121,12 @@ public class CreatePoint : MonoBehaviour
                     for (int i = 0; i < _pointList.Count; i++)
                     {
                         DrawLine(_pointList[i].position, selectedObject.position);
+                    }
+                    
+                    if (_pathLineObject.childCount != 0)
+                    {
+                        for(int i = 0; i < _pathLineObject.childCount; i++)
+                            Destroy(_pathLineObject.GetChild(i).gameObject);
                     }
                 }
             }
@@ -149,7 +165,7 @@ public class CreatePoint : MonoBehaviour
     {
         if(_pointList.Count <= 1) return;
         
-        _canCreatePoint = false;
+        //_canCreatePoint = false;
         Debug.Log("Point list: " + _pointList.Count);
         Littl.StartAlgoritm?.Invoke(_pointList);
     }
@@ -167,6 +183,11 @@ public class CreatePoint : MonoBehaviour
             var effect = Instantiate(_effectPrefab, sphere.transform.position, Quaternion.Euler(-90, 0, 0));
             StartCoroutine(DestroyAfterTime(effect.gameObject));
         }
+
+        if (_pointList.Count == 11)
+        {
+            _warringPanel.gameObject.SetActive(true);
+        }
     }
     
     [CanBeNull]
@@ -174,14 +195,23 @@ public class CreatePoint : MonoBehaviour
     {
         if (File.Exists(path))
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(List<T>));
-            using (StreamReader reader = new StreamReader(path))
+            try
             {
-                return (List<T>)serializer.Deserialize(reader);
+                XmlSerializer serializer = new XmlSerializer(typeof(List<T>));
+                using (StreamReader reader = new StreamReader(path))
+                {
+                    return (List<T>)serializer.Deserialize(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                _fileExceptionPanel.gameObject.SetActive(true);
+                return null;
             }
         }
         else
         {
+            _fileExceptionPanel.gameObject.SetActive(true);
             Debug.LogError($"Файл не найден: {path}");
             return null;
         } 

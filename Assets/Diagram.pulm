@@ -27,11 +27,12 @@ class Littl {
     + float bestCost = float.MaxValue;
     + List<int> bestPath;
 
-    +StartExecution()
-    +Solve()
-    +BranchAndBound(List<int> path, float currentCost)
+    +SolveTSP()
+    +ComputerDistanceMatrix()
+    +SolveLittleAlgoritm(float[,] matrix)
+    +LittlAlgoritm(float[,] matrix, List<int> currentPath, float currentCost, int level, ref float minCost, ref List<int> bestPath)
     +DrawPath()
-    +DrawLine(Vector3 startPosition, Vector3 endPosition)
+    +DrawLine() 
 }
 
 class SaveData {

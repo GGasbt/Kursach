@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Palmmedia.ReportGenerator.Core.Common;
 using UnityEngine;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 public class Littl : MonoBehaviour
 {
     [SerializeField] private GameObject _linePrefab;
+    [SerializeField] private Transform _pathLineObject;
     private float[,] distanceMatrix;
     private int numPoints;
     private float bestCost = float.MaxValue;
@@ -27,7 +22,6 @@ public class Littl : MonoBehaviour
     {
         StartAlgoritm += delegate(List<Transform> list) {
             points = list;
-            //SaveSystem.saveData.Points = ConvertListInArray(points);
             SolveTSP();
         };
     }
@@ -51,11 +45,11 @@ public class Littl : MonoBehaviour
             {
                 if (i == j)
                 {
-                    distanceMatrix[i, j] = int.MaxValue; // Исключаем путь из точки в саму себя
+                    distanceMatrix[i, j] = float.MaxValue;
                 }
                 else
                 {
-                    distanceMatrix[i, j] = Mathf.RoundToInt(Vector3.Distance(points[i].position, points[j].position));
+                    distanceMatrix[i, j] = (float)Math.Round(Vector3.Distance(points[i].position, points[j].position), 2);
                 }
             }
         }
@@ -64,7 +58,7 @@ public class Littl : MonoBehaviour
     List<int> SolveLittleAlgorithm(float[,] matrix)
     {
         int n = matrix.GetLength(0);
-        float minCost = int.MaxValue;
+        float minCost = float.MaxValue;
         List<int> bestPath = new List<int>();
 
         LittleAlgorithm(matrix, new List<int> { 0 }, 0, 0, ref minCost, ref bestPath);
@@ -134,7 +128,7 @@ public class Littl : MonoBehaviour
 
     private void DrawLine(Vector3 startPosition, Vector3 endPosition)
     {
-        GameObject line = Instantiate(_linePrefab);
+        GameObject line = Instantiate(_linePrefab, _pathLineObject);
         LineRenderer lineRenderer = line.GetComponent<LineRenderer>();
 
         // Настраиваем точки для линии

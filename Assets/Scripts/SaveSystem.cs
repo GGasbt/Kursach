@@ -1,19 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
-using System.Text.Json;
 using System.Xml.Serialization;
-using Palmmedia.ReportGenerator.Core.Common;
-using UnityEngine.UI;
+using SimpleFileBrowser;
 
 public class SaveSystem : MonoBehaviour
 {
     [SerializeField] private GameObject _errorPanel;
-    public static List<string> savedFiles = new List<string>();
     private SaveData _saveData;
     
     private List<Transform> _points;
@@ -21,12 +17,36 @@ public class SaveSystem : MonoBehaviour
 
     public static Action saveResult;
     
+    private FileBrowser.OnSuccess _onSuccess;
+    private FileBrowser.OnCancel _onCancel;
+
+    private string _path;
+    
     private void OnEnable()
     {
         Littl.StartAlgoritm += list => _points = list;
         Littl.FinishAlgoritm += ints => _bestPath = ints;
         
         saveResult += SaveResult;
+    }
+
+    private void Start()
+    {
+        _onSuccess = paths =>
+        {
+            File.WriteAllText(paths[0], SaveTxtResult());
+            _saveData.ResultLink = paths[0];
+            Debug.Log(paths[0]);
+            
+            CreateScreenshot();
+            SaveInputData();
+            SaveXmlData(_saveData, $"{LoadData.GetSolutionFolderPath()}\\{DateTime.Now.ToString("yyyyMMdd_HHmmss")}-Solution.xml");
+        };
+    }
+
+    private string GetPath(string[] pathList)
+    {
+        return pathList[0];
     }
 
     private void OnDisable()
@@ -42,24 +62,7 @@ public class SaveSystem : MonoBehaviour
             return;
         }
          _saveData = new SaveData();
-         _saveData.ResultLink = SaveDecisionFile();
-        
-         if (_saveData.ResultLink == null) return;
-         
-         string link = _saveData.ResultLink.Remove(_saveData.ResultLink.Length - 4);
-         
-         //Создание скриншота
-         string screenshotPath = $"{link}.png";
-         CreateScreenshot(screenshotPath);
-         _saveData.ImageLink = screenshotPath;
-         
-         // Сохранение входных данных
-         SaveInputData();
-         
-         // Сохранение результата 
-        
-         Debug.Log($"Image link:  {_saveData.ImageLink} \n ResultLink: {link}");
-         SaveXmlData(_saveData, $"{LoadData.GetSolutionFolderPath()}\\{DateTime.Now.ToString("yyyyMMdd_HHmmss")}-Solution.xml");
+         SaveDecisionFile();
     }
 
     private void SaveInputData()
@@ -79,32 +82,20 @@ public class SaveSystem : MonoBehaviour
     
     private string SaveDecisionFile()
     {
-        // Открываем диалоговое окно для выбора пути сохранения
-        string path = EditorUtility.SaveFilePanel(
-            "Save text file",       // Заголовок окна
-            "",                     // Начальная папка
-            "example.txt",          // Имя файла по умолчанию
-            "txt");                 // Расширение файла
-
-        // Проверяем, указан ли путь
-        if (string.IsNullOrEmpty(path))
-        {
-            Debug.Log("Сохранение отменено пользователем.");
-            return null;
-        }
-
-        // Сохранение результата
-        File.WriteAllText(path, SaveTxtResult());
-        //SaveXmlData(path, );
-        
-        Debug.Log($"Файл успешно сохранён по пути: {path}");
-        
-        return path;
+        FileBrowser.SetFilters( false, new FileBrowser.Filter( "Solution", ".txt") );
+        FileBrowser.ShowSaveDialog(_onSuccess, _onCancel, FileBrowser.PickMode.Files, false, "", "solution.txt", "Save", "Save");
+        return _path;
     }
 
-    private void CreateScreenshot(string screenshotName)
+    private void CreateScreenshot()
     {
-        StartCoroutine(TakeScreenshot(screenshotName));
+        
+        string link = _saveData.ResultLink.Remove(_saveData.ResultLink.Length - 4);
+         
+        //Создание скриншота
+        string screenshotPath = $"{link}.png";
+        _saveData.ImageLink = screenshotPath;
+        StartCoroutine(TakeScreenshot(screenshotPath));
     }
     
     private IEnumerator TakeScreenshot(string screenshotName)

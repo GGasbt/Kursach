@@ -30,9 +30,12 @@ public class ScrollViewController : MonoBehaviour
 
     private void InstantiateCell(SaveData saveData)
     {
-        GameObject cellObj = Instantiate(_cellPrefab, _controller.transform);
-        var cell = cellObj.GetComponent<CellObj>();
-        cell.DefineInfo(saveData);
+        if (saveData.ResultLink != null && saveData.ImageLink != null)
+        {
+            GameObject cellObj = Instantiate(_cellPrefab, _controller.transform);
+            var cell = cellObj.GetComponent<CellObj>();
+            cell.DefineInfo(saveData);
+        }
     }
     
     [CanBeNull]
